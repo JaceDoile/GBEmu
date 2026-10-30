@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  core-tests:
+    name: Emulator core tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build test tools
+        run: |
+          gcc -O2 -std=c11 -Wall -o tests/runner tests/runner.c Core/gb.c -Wno-unused-result
+          gcc -O2 -std=c11 -Wall -o tests/savetest tests/savetest.c Core/gb.c
+      - name: Save file tests
+        run: ./tests/savetest
+      - name: Test ROMs (blargg)
+        run: |
+          git clone --depth 1 https://github.com/retrio/gb-test-roms roms
+          ./tests/run_suite.sh roms
+
+  ios:
+    name: iOS app (.ipa)
+    needs: core-tests
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Generate Xcode project
+        run: |
+          brew install xcodegen
+          xcodegen generate
+      - name: Build (unsigned)
+        run: |
+          set -o pipefail
+          xcodebuild -project GBEmu.xcodeproj -scheme GBEmu -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build 2>&1 | tee build.log | grep -E "error:|warning: .*\.swift|\*\* BUILD" || true
+          test -d build/Build/Products/Release-iphoneos/GBEmu.app
+      - name: Show errors
+        if: failure()
+        run: grep -B2 -A6 "error:" build.log | head -200 || true
+      - name: Package IPA
+        run: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/GBEmu.app Payload/
+          zip -qry GBEmu.ipa Payload
+          ls -la GBEmu.ipa
+      - uses: actions/upload-artifact@v4
+        with:
+          name: GBEmu-ipa
+          path: GBEmu.ipa
+      - name: Publish "latest" release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest -y --cleanup-tag || true
+          gh release create latest GBEmu.ipa --title "GB Emu – latest build" \
+            --notes "Built from ${GITHUB_SHA::7}. Download GBEmu.ipa and install it with Sideloadly." --latest

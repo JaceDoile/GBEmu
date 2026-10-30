@@ -1,0 +1,35 @@
+name: GBEmu
+options:
+  bundleIdPrefix: com.jacedoile
+  deploymentTarget:
+    iOS: "16.0"
+settings:
+  base:
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: "1.0"
+    CURRENT_PROJECT_VERSION: "1"
+targets:
+  GBEmu:
+    type: application
+    platform: iOS
+    scheme: {}
+    sources:
+      - path: App
+      - path: Core
+    settings:
+      base:
+        PRODUCT_NAME: GBEmu
+        PRODUCT_BUNDLE_IDENTIFIER: com.jacedoile.gbemu
+        INFOPLIST_FILE: App/Info.plist
+        GENERATE_INFOPLIST_FILE: NO
+        SWIFT_OBJC_BRIDGING_HEADER: App/GBEmu-Bridging-Header.h
+        TARGETED_DEVICE_FAMILY: "1,2"
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        GCC_C_LANGUAGE_STANDARD: gnu11
+        GCC_OPTIMIZATION_LEVEL: "3"
+        SWIFT_OPTIMIZATION_LEVEL: "-O"
+        ENABLE_BITCODE: NO
+      configs:
+        Debug:
+          GCC_OPTIMIZATION_LEVEL: "2"
+          SWIFT_OPTIMIZATION_LEVEL: "-Onone"

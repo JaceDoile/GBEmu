@@ -1,0 +1,7 @@
+*.xcodeproj/
+build/
+DerivedData/
+tests/runner
+tests/savetest
+*.ipa
+.DS_Store
