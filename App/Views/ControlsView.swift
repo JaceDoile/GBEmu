@@ -26,7 +26,7 @@ final class ControlsView: UIView {
 
     private var owners: [UITouch: Owner] = [:]
     private var masks: [UITouch: UInt8] = [:]
-    private var mask: UInt8 = 0
+    private var pressed: UInt8 = 0
     private let impact = UIImpactFeedbackGenerator(style: .light)
     private let impactHeavy = UIImpactFeedbackGenerator(style: .medium)
 
@@ -190,9 +190,9 @@ final class ControlsView: UIView {
 
     private func update() {
         let m = masks.values.reduce(UInt8(0)) { $0 | $1 }
-        guard m != mask else { return }
-        let newlyPressed = m & ~mask
-        mask = m
+        guard m != pressed else { return }
+        let newlyPressed = m & ~pressed
+        pressed = m
         if haptics && newlyPressed != 0 { impact.impactOccurred(intensity: 0.7) }
         onButtons?(m)
         setNeedsDisplay()
@@ -235,23 +235,23 @@ final class ControlsView: UIView {
         UIBezierPath(roundedRect: vert, cornerRadius: arm * 0.35).stroke()
         let seg = len - arm
         fillOn.setFill()
-        if mask & Btn.up != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - arm, y: c.y - len, width: arm * 2, height: seg), cornerRadius: 4).fill() }
-        if mask & Btn.down != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - arm, y: c.y + arm, width: arm * 2, height: seg), cornerRadius: 4).fill() }
-        if mask & Btn.left != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - len, y: c.y - arm, width: seg, height: arm * 2), cornerRadius: 4).fill() }
-        if mask & Btn.right != 0 { UIBezierPath(roundedRect: CGRect(x: c.x + arm, y: c.y - arm, width: seg, height: arm * 2), cornerRadius: 4).fill() }
+        if pressed & Btn.up != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - arm, y: c.y - len, width: arm * 2, height: seg), cornerRadius: 4).fill() }
+        if pressed & Btn.down != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - arm, y: c.y + arm, width: arm * 2, height: seg), cornerRadius: 4).fill() }
+        if pressed & Btn.left != 0 { UIBezierPath(roundedRect: CGRect(x: c.x - len, y: c.y - arm, width: seg, height: arm * 2), cornerRadius: 4).fill() }
+        if pressed & Btn.right != 0 { UIBezierPath(roundedRect: CGRect(x: c.x + arm, y: c.y - arm, width: seg, height: arm * 2), cornerRadius: 4).fill() }
 
         // A / B
         for (center, bit, name) in [(aCenter, Btn.a, "A"), (bCenter, Btn.b, "B")] {
             let r = CGRect(x: center.x - btnRadius, y: center.y - btnRadius, width: btnRadius * 2, height: btnRadius * 2)
             let p = UIBezierPath(ovalIn: r)
-            (mask & bit != 0 ? fillOn : fill).setFill(); p.fill()
+            (pressed & bit != 0 ? fillOn : fill).setFill(); p.fill()
             stroke.setStroke(); p.lineWidth = 1.5; p.stroke()
             label(name, r, size: btnRadius * 0.7)
         }
 
         // Start / Select
-        pill(selectRect, on: mask & Btn.select != 0)
-        pill(startRect, on: mask & Btn.start != 0)
+        pill(selectRect, on: pressed & Btn.select != 0)
+        pill(startRect, on: pressed & Btn.start != 0)
         label("SELECT", selectRect.offsetBy(dx: 0, dy: selectRect.height + 2).insetBy(dx: -20, dy: 0), size: 9, weight: .semibold)
         label("START", startRect.offsetBy(dx: 0, dy: startRect.height + 2).insetBy(dx: -20, dy: 0), size: 9, weight: .semibold)
     }
