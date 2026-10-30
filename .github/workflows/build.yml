@@ -42,7 +42,7 @@ jobs:
             -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build 2>&1 | tee build.log | grep -E "error:|warning: .*\.swift|\*\* BUILD" || true
-          test -d build/Build/Products/Release-iphoneos/GBEmu.app
+          test -f build/Build/Products/Release-iphoneos/GBEmu.app/GBEmu
       - name: Show errors
         if: failure()
         run: grep -B2 -A6 "error:" build.log | head -200 || true

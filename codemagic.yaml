@@ -32,7 +32,7 @@ workflows:
             build > build.log 2>&1 || true
           # Short error summary (copy this if the build fails)
           grep -E "\.swift:[0-9]+:[0-9]+: error:|\.c:[0-9]+:[0-9]+: error:|\*\* BUILD" build.log | sort -u | head -60 | tee errors.txt
-          test -d build/Build/Products/Release-iphoneos/GBEmu.app
+          test -f build/Build/Products/Release-iphoneos/GBEmu.app/GBEmu || { echo "BUILD FAILED - see errors.txt"; exit 1; }
       - name: Package IPA
         script: |
           mkdir -p Payload
