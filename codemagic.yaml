@@ -1,0 +1,45 @@
+# Free alternative to GitHub Actions: Codemagic gives personal accounts
+# 500 macOS (M2) build minutes per month. This builds an unsigned IPA
+# that Sideloadly signs with your Apple ID.
+workflows:
+  ios-ipa:
+    name: Build GBEmu.ipa
+    max_build_duration: 30
+    instance_type: mac_mini_m2
+    environment:
+      xcode: latest
+    triggering:
+      events:
+        - push
+      branch_patterns:
+        - pattern: main
+          include: true
+    scripts:
+      - name: Core tests
+        script: |
+          clang -O2 -std=c11 -o tests/runner tests/runner.c Core/gb.c
+          clang -O2 -std=c11 -o tests/savetest tests/savetest.c Core/gb.c
+          ./tests/savetest
+      - name: Generate Xcode project
+        script: |
+          command -v xcodegen || brew install xcodegen
+          xcodegen generate
+      - name: Build app (unsigned)
+        script: |
+          xcodebuild -project GBEmu.xcodeproj -scheme GBEmu -configuration Release \
+            -sdk iphoneos -destination 'generic/platform=iOS' -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build > build.log 2>&1 || true
+          # Short error summary (copy this if the build fails)
+          grep -E "\.swift:[0-9]+:[0-9]+: error:|\.c:[0-9]+:[0-9]+: error:|\*\* BUILD" build.log | sort -u | head -60 | tee errors.txt
+          test -d build/Build/Products/Release-iphoneos/GBEmu.app
+      - name: Package IPA
+        script: |
+          mkdir -p Payload
+          cp -R build/Build/Products/Release-iphoneos/GBEmu.app Payload/
+          zip -qry GBEmu.ipa Payload
+          ls -la GBEmu.ipa
+    artifacts:
+      - GBEmu.ipa
+      - build.log
+      - errors.txt
